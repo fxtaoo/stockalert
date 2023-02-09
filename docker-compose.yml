@@ -1,0 +1,8 @@
+version: '3'
+services:
+  webtool:
+    image: fxtaoo/stockalert:latest
+    container_name: stockalert
+    volumes:
+      - conf.json:/app/conf.json:rw
+    restart: always

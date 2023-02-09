@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票价值提醒</title>
+    <style type="text/css">
+        html {
+            font-family: sans-serif;
+        }
+
+        table {
+            border-collapse: collapse;
+            border: 2px solid rgb(200, 200, 200);
+            letter-spacing: 1px;
+            font-size: 0.8rem;
+        }
+
+        td,
+        th {
+            border: 1px solid rgb(190, 190, 190);
+            padding: 10px 20px;
+        }
+
+        th {
+            background-color: rgb(235, 235, 235);
+        }
+
+        td {
+            text-align: center;
+        }
+
+        caption {
+            padding: 10px;
+        }
+
+        .high {
+            background-color: #D3756B;
+        }
+
+        .low {
+            background-color: #658864;
+        }
+
+        .middle {
+            background-color: #F2DEBA;
+        }
+
+        .small-font {
+            font-size: 0.8rem
+        }
+
+    </style>
+</head>
+
+<body>
+    <a href="https://fangxuetao.com/tool">日常工具</a>
+    <h2><a id="title" href="">股票价值提醒</a></h2>
+    <form action="/tool/stock" method="POST">
+        <label for="ticker">股票代码（例：600036）:</label>
+        <input type="text" name="ticker">
+        <button onclick="updateResult()">更新</button>
+        <div class="small-font">注意！点击更新，股票代码存在删除，不存在新增。</div>
+    </form>
+    <br>
+    <div class="small-font">
+        A 股数据：<a href="https://gu.qq.com/sh600036/gp">PE（TTM）腾讯证券</a>、<a
+            href="https://www.jisilu.cn/data/stock/600036">五年平均 ROE 股息（集思录</a>）、<a
+            href="https://wglh.com/stock/historyroe/sh600036/">滚动 ROE （乌龟量化）</a>
+        <br>
+        价值 = PE（TTM）/ （五年平均 ROE * 0.7 + 滚动 ROE * 0.3）
+    </div>
+    <div class="small-font">
+        美股数据：<a href="https://finance.yahoo.com/">Yahoo! Finance</a>
+        <br>
+        价值 =（Trailing P/E * 0.7 + Forward P/E * 0.3）/ Return on Equity (ttm)
+        <br>
+        当前 Trailing Forward P/E 为 N/A，则取最近几季度
+    </div>
+    <br>
+    <div class="small-font">
+        <span class="low">价值 &lt {{ .Alert.Low }} 低估</span>
+    </div>
+    <div class="small-font">
+        <span class="middle">{{ .Alert.Low }} &lt 价值 &lt {{ .Alert.High }} 适中</span>
+    </div>
+    <div class="small-font">
+        <span class="high">价值 &gt {{ .Alert.High }} 高估</span>
+    </div>
+    <br>
+    <div class="small-font">
+        A 股数据更新：{{ timeFormat .StocksCalcCHTime }}
+        <br>
+        美股数据更新：{{ timeFormat .StocksCalcUSTime }}
+    </div>
+    <table>
+        <tr>
+            <td>代码</td>
+            <td>名称</td>
+            <td>价值</td>
+            <td>ROE</td>
+            <td>PE</td>
+            <td>股息</td>
+            <td>邮件提醒</td>
+        </tr>
+        {{ range .Stocks }}
+        <tr class="{{ .ValueCSS }}">
+            <td>{{ .Ticker }}</td>
+            <td>{{ .Name }}</td>
+            <td>{{ floatFormat .Value }}</td>
+            <td>{{ floatFormat .ROE }}</td>
+            <td>{{ floatFormat .PE }}</td>
+            <td>{{ .Dividend }}</td>
+            <td>
+                <form action="/tool/stock?ticker={{ .Ticker }}&alertmail=on" method="POST">
+                    <button onclick="updateResult()">{{ alertMailFormat .AlertMail }}</button>
+                </form>
+            </td>
+        </tr>
+        {{ end }}
+    </table>
+    <script>
+        url = window.location.href.split('?')[0]
+        title = document.getElementById("title")
+        title.setAttribute("href", url)
+
+        async function updateResult() {
+            const response = await fetch(url + '/updateresult')
+            if (response.ok) {
+                const result = await response.text()
+                alert(result)
+            } else {
+                alert('updateResult 请求错误')
+            }
+        }
+    </script>
+</body>
+
+</html>
