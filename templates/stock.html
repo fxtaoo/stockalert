@@ -97,6 +97,7 @@
     </div>
     <table>
         <tr>
+            <td>序号</td>
             <td>代码</td>
             <td>名称</td>
             <td>价值</td>
@@ -105,17 +106,18 @@
             <td>股息</td>
             <td>邮件提醒</td>
         </tr>
-        {{ range .Stocks }}
-        <tr class="{{ .ValueCSS }}">
-            <td>{{ .Ticker }}</td>
-            <td>{{ .Name }}</td>
-            <td>{{ floatFormat .Value }}</td>
-            <td>{{ floatFormat .ROE }}</td>
-            <td>{{ floatFormat .PE }}</td>
-            <td>{{ .Dividend }}</td>
+        {{ range $i,$v := .Stocks }}
+        <tr class="{{ $v.ValueCSS }}">
+            <td>{{ floatIndex $i }}</td>
+            <td>{{ $v.Ticker }}</td>
+            <td>{{ $v.Name }}</td>
+            <td>{{ floatFormat $v.Value }}</td>
+            <td>{{ floatFormat $v.ROE }}</td>
+            <td>{{ floatFormat $v.PE }}</td>
+            <td>{{ $v.Dividend }}</td>
             <td>
-                <form action="/tool/stock?ticker={{ .Ticker }}&alertmail=on" method="POST">
-                    <button onclick="updateResult()">{{ alertMailFormat .AlertMail }}</button>
+                <form action="/tool/stock?ticker={{ $v.Ticker }}&alertmail=on" method="POST">
+                    <button onclick="updateResult()">{{ alertMailFormat $v.AlertMail }}</button>
                 </form>
             </td>
         </tr>

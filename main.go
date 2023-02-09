@@ -86,6 +86,9 @@ func main() {
 		"timeFormat": func(t time.Time) string {
 			return fmt.Sprint(t.Format("2006/01/02 15:04:05"))
 		},
+		"floatIndex": func(i int) int {
+			return i + 1
+		},
 	})
 	r.LoadHTMLGlob("templates/*.html")
 	r.GET("/tool/stock", func(ctx *gin.Context) {
