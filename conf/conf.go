@@ -119,6 +119,10 @@ func (c *Conf) StockUpdate(ticker, option string) string {
 
 // 股票移动
 func (c *Conf) StockMove(ticker string) string {
+	// 阻塞
+	c.Chan <- struct{}{}
+	defer func() { <-c.Chan }()
+
 	indexs := strings.Split(ticker, ">")
 	index1, err := strconv.Atoi(indexs[0])
 	if err != nil {
@@ -140,6 +144,8 @@ func (c *Conf) StockMove(ticker string) string {
 	// 0 开始的数组下标
 	index1 -= 1
 	index2 -= 1
+
+	updateResult := fmt.Sprintf("序号 %d %s 移动至 序号 %d", index1+1, c.Stocks[index1].Name, index2+1)
 
 	tmpStocks := []stock.Stock{}
 
@@ -164,7 +170,7 @@ func (c *Conf) StockMove(ticker string) string {
 	}
 
 	c.Stocks = tmpStocks2
-	return fmt.Sprintf("序号 %d %s 移动至 %d", index1+1, c.Stocks[index1].Name, index2+1)
+	return updateResult
 }
 
 func (c *Conf) StocksAlertMail() {
