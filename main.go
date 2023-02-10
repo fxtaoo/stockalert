@@ -122,7 +122,13 @@ func main() {
 				}
 
 			}()
-			updateResult <- conf.StockUpdate(ticker, alertmail)
+			// 位置插入，格式 2>1
+			if strings.Contains(ticker, ">") {
+				updateResult <- conf.StockMove(ticker)
+			} else {
+				updateResult <- conf.StockUpdate(ticker, alertmail)
+			}
+
 		}
 		<-updateResult
 		// 结束协程

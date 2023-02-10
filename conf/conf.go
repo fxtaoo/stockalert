@@ -3,6 +3,8 @@ package conf
 import (
 	"fmt"
 	"stockalert/stock"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/fxtaoo/golib/file"
@@ -109,6 +111,56 @@ func (c *Conf) StockUpdate(ticker, alertmail string) string {
 	}
 
 	return updateResult
+}
+
+// 股票移动
+func (c *Conf) StockMove(ticker string) string {
+	indexs := strings.Split(ticker, ">")
+	index1, err := strconv.Atoi(indexs[0])
+	if err != nil {
+		return fmt.Sprintf("%s 输出有误：%s", ticker, err.Error())
+	}
+	index2, err := strconv.Atoi(indexs[1])
+	if err != nil {
+		return fmt.Sprintf("%s 输出有误：%s", ticker, err.Error())
+	}
+
+	if index1 < 1 || index1 > len(c.Stocks) {
+		return fmt.Sprintf("%s 输出有误：%d 超出范围", ticker, index1)
+	}
+
+	if index2 < 1 || index2 > len(c.Stocks) {
+		return fmt.Sprintf("%s 输出有误：%d 超出范围", ticker, index2)
+	}
+
+	// 0 开始的数组下标
+	index1 -= 1
+	index2 -= 1
+
+	tmpStocks := []stock.Stock{}
+
+	// 删除掉 index1
+	for i := range c.Stocks {
+		if i != index1 {
+			tmpStocks = append(tmpStocks, c.Stocks[i])
+		}
+	}
+
+	tmpStocks2 := []stock.Stock{}
+	for i := range tmpStocks {
+		if i == index2 {
+			tmpStocks2 = append(tmpStocks2, c.Stocks[index1])
+		}
+		tmpStocks2 = append(tmpStocks2, tmpStocks[i])
+	}
+
+	// 为最后一个
+	if len(tmpStocks) == len(tmpStocks2) {
+		tmpStocks2 = append(tmpStocks2, c.Stocks[index1])
+	}
+
+	c.Stocks = tmpStocks2
+	return fmt.Sprintf("序号 %d %s 移动至 %d", index1+1, c.Stocks[index1].Name, index2+1)
 }
 
 func (c *Conf) StocksAlertMail() {
