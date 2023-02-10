@@ -54,13 +54,13 @@ func main() {
 	})
 	// 美股
 	cron.AddFunc(conf.Alert.CronUS1, func() {
-		conf.StocksCalcCHTime = time.Now()
+		conf.StocksCalcUSTime = time.Now()
 		calcStocks("us")
 		conf.StocksAlertMail()
 	})
 	// 美股
 	cron.AddFunc(conf.Alert.CronUS2, func() {
-		conf.StocksCalcCHTime = time.Now()
+		conf.StocksCalcUSTime = time.Now()
 		calcStocks("us")
 		conf.StocksAlertMail()
 	})
