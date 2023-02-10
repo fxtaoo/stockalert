@@ -58,12 +58,12 @@
 <body>
     <a href="https://fangxuetao.com/tool">日常工具</a>
     <h2><a id="title" href="">股票价值提醒</a></h2>
-    <form action="/tool/stock" method="POST">
+    <form action="/tool/stock?option=new" method="POST">
         <label for="ticker"></label>
         <input type="text" name="ticker">
         <button onclick="updateResult()">更新</button>
         <div class="small-font">
-            输入：股票代码（例：600036），点击更新，代码存在删除，不存在新增。
+            输入：股票代码（例：600036），点击更新新增。
             <br>
             输入：3>1，点击更新，序号 3 移动至序号 1。
         </div>
@@ -109,6 +109,7 @@
             <td>PE</td>
             <td>股息</td>
             <td>邮件提醒</td>
+            <td>删除</td>
         </tr>
         {{ range $i,$v := .Stocks }}
         <tr class="{{ $v.ValueCSS }}">
@@ -120,8 +121,13 @@
             <td>{{ floatFormat $v.PE }}</td>
             <td>{{ $v.Dividend }}</td>
             <td>
-                <form action="/tool/stock?ticker={{ $v.Ticker }}&alertmail=on" method="POST">
+                <form action="/tool/stock?ticker={{ $v.Ticker }}&option=alertmail" method="POST">
                     <button onclick="updateResult()">{{ alertMailFormat $v.AlertMail }}</button>
+                </form>
+            </td>
+            <td>
+                <form action="/tool/stock?ticker={{ $v.Ticker }}&option=del" method="POST">
+                    <button onclick="updateResult()">删除</button>
                 </form>
             </td>
         </tr>

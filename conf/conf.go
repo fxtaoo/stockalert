@@ -21,6 +21,7 @@ type Conf struct {
 	Stocks           []stock.Stock `json:"stocks"`
 	StocksCalcCHTime time.Time     `json:"-"`
 	StocksCalcUSTime time.Time     `json:"-"`
+	Chan             chan struct{} `json:"-"`
 }
 
 type Alert struct {
@@ -34,6 +35,7 @@ type Alert struct {
 }
 
 func (c *Conf) Init() error {
+	c.Chan = make(chan struct{}, 1)
 	return file.JsonInitValue("conf.json", c)
 }
 
@@ -42,50 +44,47 @@ func (c *Conf) Save() error {
 }
 
 // 更新按钮
-func (c *Conf) StockUpdate(ticker, alertmail string) string {
+func (c *Conf) StockUpdate(ticker, option string) string {
+	// 阻塞
+	c.Chan <- struct{}{}
+	defer func() { <-c.Chan }()
+
 	updateResult := ""
+	tickerIndex := 0
 
-	if alertmail == "on" {
+	// ticker 下标
+	for ; tickerIndex < len(c.Stocks); tickerIndex++ {
+		if c.Stocks[tickerIndex].Ticker == ticker {
+			break
+		}
+	}
+	if tickerIndex == len(c.Stocks) {
+		tickerIndex = -1
+	}
+
+	switch option {
+	case "alertmail":
 		// 股票修改提醒
-		for i := range c.Stocks {
-			if c.Stocks[i].Ticker == ticker {
-				c.Stocks[i].AlertMail = !c.Stocks[i].AlertMail
-
-				if c.Stocks[i].AlertMail {
-					updateResult = fmt.Sprintf("%s %s %s",
-						c.Stocks[i].Ticker,
-						c.Stocks[i].Name,
-						"开启邮件提醒",
-					)
-				} else {
-					updateResult = fmt.Sprintf("%s %s %s",
-						c.Stocks[i].Ticker,
-						c.Stocks[i].Name,
-						"关闭邮件提醒",
-					)
-				}
-			}
-			if updateResult == "" {
-				updateResult = fmt.Sprintf("%s 不存在", ticker)
-			}
+		c.Stocks[tickerIndex].AlertMail = !c.Stocks[tickerIndex].AlertMail
+		if c.Stocks[tickerIndex].AlertMail {
+			updateResult = fmt.Sprintf("%s %s %s",
+				c.Stocks[tickerIndex].Ticker,
+				c.Stocks[tickerIndex].Name,
+				"开启邮件提醒",
+			)
+		} else {
+			updateResult = fmt.Sprintf("%s %s %s",
+				c.Stocks[tickerIndex].Ticker,
+				c.Stocks[tickerIndex].Name,
+				"关闭邮件提醒",
+			)
 		}
-
-	} else {
-		// 股票新增删除
-		tmpStocks := []stock.Stock{}
-		delStockName := ""
-
-		for i := range c.Stocks {
-			if c.Stocks[i].Ticker == ticker {
-				// 股票删除
-				delStockName = c.Stocks[i].Name
-				continue
-			}
-			tmpStocks = append(tmpStocks, c.Stocks[i])
-		}
-
+	case "new":
 		// 股票新增
-		if len(c.Stocks) == len(tmpStocks) {
+		if tickerIndex != -1 {
+			// 重复
+			updateResult = fmt.Sprintf("新增失败 %s %s 以存在！", ticker, c.Stocks[tickerIndex].Name)
+		} else {
 			newStock := stock.Stock{
 				Ticker:    ticker,
 				AlertMail: true,
@@ -97,12 +96,17 @@ func (c *Conf) StockUpdate(ticker, alertmail string) string {
 			}
 			c.Stocks = append(c.Stocks, newStock)
 			updateResult = fmt.Sprintf("%s %s 添加成功", ticker, newStock.Name)
-		} else {
-			// 股票删除
-			c.Stocks = c.Stocks[:0]
-			c.Stocks = append(c.Stocks, tmpStocks...)
-			updateResult = fmt.Sprintf("%s %s 以删除", ticker, delStockName)
 		}
+	case "del":
+		// 股票删除
+		tmpStocks := []stock.Stock{}
+		for i := range c.Stocks {
+			if i != tickerIndex {
+				tmpStocks = append(tmpStocks, c.Stocks[i])
+			}
+		}
+		updateResult = fmt.Sprintf("%s %s 以删除", ticker, c.Stocks[tickerIndex].Name)
+		c.Stocks = tmpStocks
 	}
 
 	// 保存

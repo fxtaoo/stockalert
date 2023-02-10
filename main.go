@@ -99,37 +99,32 @@ func main() {
 		updateResult <- ""
 	})
 	r.POST("/tool/stock", func(ctx *gin.Context) {
-		// 股票新增删除
 		ticker := ctx.PostForm("ticker")
-		alertmail := ""
 		if ticker == "" {
-			// 邮件提醒修改
 			ticker = ctx.Query("ticker")
-			alertmail = ctx.Query("alertmail")
 		}
+		option := ctx.Query("option")
 		quit := make(chan int)
-		if ticker != "" {
-			go func() {
-				// post updateresult 失败避免锁死
-				for {
-					select {
-					case <-quit:
-						return
-					case <-time.After(time.Second * 3):
-						<-updateResult
-						updateResult <- ""
-					}
+		go func() {
+			// post updateresult 失败避免锁死
+			for {
+				select {
+				case <-quit:
+					return
+				case <-time.After(time.Second * 3):
+					<-updateResult
+					updateResult <- ""
 				}
-
-			}()
-			// 位置插入，格式 2>1
-			if strings.Contains(ticker, ">") {
-				updateResult <- conf.StockMove(ticker)
-			} else {
-				updateResult <- conf.StockUpdate(ticker, alertmail)
 			}
 
+		}()
+		// 位置插入，格式 2>1
+		if strings.Contains(ticker, ">") {
+			updateResult <- conf.StockMove(ticker)
+		} else {
+			updateResult <- conf.StockUpdate(ticker, option)
 		}
+
 		<-updateResult
 		// 结束协程
 		quit <- 0
