@@ -19,6 +19,7 @@ type Stock struct {
 	ValueCSS      string    `json:"-"`
 	PE            float64   `json:"-"`
 	ROE           float64   `json:"-"`
+	Price         string    `json:"-"`
 	Dividend      string    `json:"-"`
 	CHUS          string    `json:"chus"`
 }
@@ -35,8 +36,9 @@ func (s *Stock) GetPEName() (float64, error) {
 	}
 
 	webDate := struct {
-		Name string `selector:"div.gb_title div.title_bg h1:nth-child(1)"`
-		PE   string `selector:"div.content div.col-2 ul:nth-child(3) li:nth-child(4) span:nth-child(2)"`
+		Name  string `selector:"div.gb_title div.title_bg h1:nth-child(1)"`
+		Price string `selector:"#spFP div:nth-child(1) span:nth-child(1)"`
+		PE    string `selector:"div.content div.col-2 ul:nth-child(3) li:nth-child(4) span:nth-child(2)"`
 	}{}
 
 	err := GetWebData(
@@ -46,12 +48,13 @@ func (s *Stock) GetPEName() (float64, error) {
 	)
 
 	if err != nil {
-		return 0, fmt.Errorf("%s 获取\"PE、名字\"数据异常", s.Ticker)
+		return 0, fmt.Errorf("%s 获取\"PE、名字、价格\"数据异常", s.Ticker)
 	}
 	if webDate.Name == "" || webDate.PE == "" {
-		return 0, fmt.Errorf("%s 获取\"PE、名字\"数据异常", s.Ticker)
+		return 0, fmt.Errorf("%s 获取\"PE、名字、价格\"数据异常", s.Ticker)
 	}
 	s.Name = webDate.Name
+	s.Price = webDate.Price
 	return strconv.ParseFloat(webDate.PE, 64)
 }
 
@@ -156,6 +159,7 @@ func (s *Stock) CalcValueUS() error {
 
 	webDate := struct {
 		Name        string `selector:"#quote-header-info div:nth-child(2) div:nth-child(1) div:nth-child(1) h1"`
+		Price       string `selector:"#quote-header-info div:nth-child(3) div:nth-child(1) div:nth-child(1) fin-streamer:nth-child(1)"`
 		TrailingPE  string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(3) td:nth-child(2)"`
 		ForwardPE   string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(4) td:nth-child(2)"`
 		ROE         string `selector:"#Col1-0-KeyStatistics-Proxy section div:nth-child(3) div:nth-child(3) div div:nth-child(3) div div table tbody tr:nth-child(2) td:nth-child(2)"`
@@ -257,6 +261,7 @@ func (s *Stock) CalcValueUS() error {
 	s.PE = trailingPE*0.7 + forwardPE*0.3
 	s.ROE = roe
 	s.Value = s.PE / s.ROE
+	s.Price = webDate.Price
 	if s.Dividend != "N/A" {
 		s.Dividend = fmt.Sprintf("%s%%", webDate.Dividend)
 	}
