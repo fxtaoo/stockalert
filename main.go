@@ -50,19 +50,19 @@ func main() {
 	cron.AddFunc(conf.Alert.CronCH, func() {
 		conf.StocksCalcCHTime = time.Now()
 		calcStocks("ch")
-		conf.StocksAlertMail()
+		conf.StocksAlertMail("ch")
 	})
 	// 美股
 	cron.AddFunc(conf.Alert.CronUS1, func() {
 		conf.StocksCalcUSTime = time.Now()
 		calcStocks("us")
-		conf.StocksAlertMail()
+		conf.StocksAlertMail("us")
 	})
 	// 美股
 	cron.AddFunc(conf.Alert.CronUS2, func() {
 		conf.StocksCalcUSTime = time.Now()
 		calcStocks("us")
-		conf.StocksAlertMail()
+		conf.StocksAlertMail("us")
 	})
 	cron.Start()
 

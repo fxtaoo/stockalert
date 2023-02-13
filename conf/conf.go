@@ -173,7 +173,7 @@ func (c *Conf) StockMove(ticker string) string {
 	return updateResult
 }
 
-func (c *Conf) StocksAlertMail() {
+func (c *Conf) StocksAlertMail(chus string) {
 	content := ""
 	timeNow := time.Now()
 
@@ -195,7 +195,7 @@ func (c *Conf) StocksAlertMail() {
 	}
 
 	for index, stock := range c.Stocks {
-		if stock.AlertMail && (stock.Value > c.Alert.High || stock.Value < c.Alert.Low) {
+		if stock.AlertMail && (stock.Value > c.Alert.High || stock.Value < c.Alert.Low) && stock.CHUS == chus {
 			// 没有发送过提醒邮件
 			if stock.AlertMailTime.IsZero() {
 				contentAdd(index)
