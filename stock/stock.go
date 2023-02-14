@@ -22,6 +22,7 @@ type Stock struct {
 	Price         string    `json:"-"`
 	Dividend      string    `json:"-"`
 	CHUS          string    `json:"chus"`
+	URL           string    `json:"-"`
 }
 
 // PE（TTM）、名字 腾讯证券
@@ -60,9 +61,7 @@ func (s *Stock) GetPEName() (float64, error) {
 
 // 五年平均 ROE 股息（集思录）
 func (s *Stock) GetROEAVG() (float64, error) {
-	url := "https://www.jisilu.cn/data/stock"
-
-	url = fmt.Sprintf("%s/%s", url, s.Ticker)
+	s.URL = fmt.Sprintf("https://www.jisilu.cn/data/stock/%s", s.Ticker)
 
 	webDate := struct {
 		DividendAVG string `selector:"tr:nth-child(2) td:nth-child(2)" attr:"title"`
@@ -71,7 +70,7 @@ func (s *Stock) GetROEAVG() (float64, error) {
 
 	err := GetWebData(
 		"#stock_detail tbody",
-		url,
+		s.URL,
 		&webDate,
 	)
 
@@ -155,6 +154,8 @@ func (s *Stock) CalcValueCH() error {
 // 美股计算价值
 func (s *Stock) CalcValueUS() error {
 	// yahoo finance
+	s.URL = fmt.Sprintf("https://finance.yahoo.com/quote/%s?p=%s", s.Ticker, s.Ticker)
+
 	url := fmt.Sprintf("https://finance.yahoo.com/quote/%s/key-statistics?p=%s", s.Ticker, s.Ticker)
 
 	webDate := struct {

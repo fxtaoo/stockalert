@@ -116,7 +116,9 @@
         <tr class="{{ $v.ValueCSS }}">
             <td>{{ floatIndex $i }}</td>
             <td>{{ $v.Ticker }}</td>
-            <td>{{ $v.Name }}</td>
+            <td>
+                <a href="{{ $v.URL }}">{{ $v.Name }}</a>
+            </td>
             <td>{{ $v.Price }}</td>
             <td>{{ floatFormat $v.Value }}</td>
             <td>{{ floatFormat $v.ROE }}</td>
