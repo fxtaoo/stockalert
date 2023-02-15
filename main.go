@@ -91,14 +91,16 @@ func main() {
 		},
 	})
 	r.LoadHTMLGlob("templates/*.html")
-	r.GET("/tool/stock", func(ctx *gin.Context) {
+
+	r.Static("/static/", "templates/static")
+	r.GET("/", func(ctx *gin.Context) {
 		ctx.HTML(200, "stock.html", conf)
 	})
-	r.GET("/tool/stock/updateresult", func(ctx *gin.Context) {
+	r.GET("updateresult", func(ctx *gin.Context) {
 		ctx.String(200, "%s", <-updateResult)
 		updateResult <- ""
 	})
-	r.POST("/tool/stock", func(ctx *gin.Context) {
+	r.POST("/", func(ctx *gin.Context) {
 		ticker := ctx.PostForm("ticker")
 		if ticker == "" {
 			ticker = ctx.Query("ticker")
