@@ -252,16 +252,20 @@ func (s *Stock) CalcValueUS() error {
 	if err != nil {
 		return err
 	}
-
-	roe, err := strconv.ParseFloat(webDate.ROE[:len(webDate.ROE)-1], 64)
-	if err != nil {
-		return err
-	}
-
 	s.Name = strings.TrimSpace(strings.Split(webDate.Name, "(")[0])
 	s.PE = trailingPE*0.7 + forwardPE*0.3
-	s.ROE = roe
-	s.Value = s.PE / s.ROE
+	if webDate.ROE != "N/A" {
+		roe, err := strconv.ParseFloat(webDate.ROE[:len(webDate.ROE)-1], 64)
+		if err != nil {
+			return err
+		}
+		s.ROE = roe
+		s.Value = s.PE / s.ROE
+	} else {
+		s.ROE = -1
+		s.Value = -1
+	}
+
 	s.Price = webDate.Price
 	if s.Dividend != "N/A" {
 		s.Dividend = fmt.Sprintf("%s%%", webDate.Dividend)
@@ -286,7 +290,11 @@ func (s *Stock) CalcValue(low, high float64) error {
 	s.ValueTime = time.Now()
 
 	if s.Value < low {
-		s.ValueCSS = "low"
+		if s.Value == -1 {
+			s.ValueCSS = "na"
+		} else {
+			s.ValueCSS = "low"
+		}
 	} else if s.Value > high {
 		s.ValueCSS = "high"
 	} else {

@@ -74,7 +74,11 @@ func main() {
 
 	r.SetFuncMap(template.FuncMap{
 		"floatFormat": func(f float64) string {
-			return fmt.Sprintf("%.2f", f)
+			if f == -1 {
+				return "N/A"
+			} else {
+				return fmt.Sprintf("%.2f", f)
+			}
 		},
 		"alertMailFormat": func(a bool) string {
 			if a {

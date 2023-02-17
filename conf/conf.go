@@ -170,6 +170,12 @@ func (c *Conf) StockMove(ticker string) string {
 	}
 
 	c.Stocks = tmpStocks2
+
+	// 保存
+	if err := c.Save(); err != nil {
+		updateResult = fmt.Sprintf("配置保存失败：%s", err.Error())
+	}
+
 	return updateResult
 }
 
@@ -195,7 +201,7 @@ func (c *Conf) StocksAlertMail(chus string) {
 	}
 
 	for index, stock := range c.Stocks {
-		if stock.AlertMail && (stock.Value > c.Alert.High || stock.Value < c.Alert.Low) && stock.CHUS == chus {
+		if stock.AlertMail && (stock.Value > c.Alert.High || stock.Value < c.Alert.Low) && stock.CHUS == chus && stock.Value != -1 {
 			// 没有发送过提醒邮件
 			if stock.AlertMailTime.IsZero() {
 				contentAdd(index)
