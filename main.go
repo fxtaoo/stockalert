@@ -102,7 +102,6 @@ func main() {
 	})
 	r.GET("updateresult", func(ctx *gin.Context) {
 		ctx.String(200, "%s", <-updateResult)
-		updateResult <- ""
 	})
 	r.POST("/", func(ctx *gin.Context) {
 		ticker := ctx.PostForm("ticker")
@@ -112,14 +111,13 @@ func main() {
 		option := ctx.Query("option")
 		quit := make(chan int)
 		go func() {
-			// post updateresult 失败避免锁死
+			// get updateresult 失败避免锁死
 			for {
 				select {
 				case <-quit:
 					return
 				case <-time.After(time.Second * 3):
 					<-updateResult
-					updateResult <- ""
 				}
 			}
 
@@ -130,9 +128,6 @@ func main() {
 		} else {
 			updateResult <- conf.StockUpdate(ticker, option)
 		}
-
-		<-updateResult
-		// 结束协程
 		quit <- 0
 		// 延迟避免不出现弹窗
 		<-time.After(time.Millisecond * 1500)
