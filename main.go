@@ -70,6 +70,7 @@ func main() {
 	updateResult := make(chan string)
 
 	r := gin.Default()
+
 	r.Use(gin.BasicAuth(gin.Accounts(conf.Web.Auth)))
 
 	r.SetFuncMap(template.FuncMap{

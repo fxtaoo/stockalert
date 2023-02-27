@@ -1,7 +1,9 @@
 package stock
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -96,33 +98,33 @@ func (s *Stock) GetROEAVG() (float64, error) {
 	}
 }
 
-// 滚动 ROE （乌龟量化）
-func (s *Stock) GetROERecent() (float64, error) {
-	url := "https://wglh.com/stock/s"
+// 预测 ROE（亿牛网）
+func (s *Stock) GetROEGuess() (float64, error) {
+	url := "https://eniu.com/gu"
 
 	switch s.Ticker[0:2] {
 	case "60":
-		url = fmt.Sprintf("%s/sh%s", url, s.Ticker)
+		url = fmt.Sprintf("%s/sh%s/roe", url, s.Ticker)
 	case "00":
-		url = fmt.Sprintf("%s/sz%s", url, s.Ticker)
+		url = fmt.Sprintf("%s/sz%s/roe", url, s.Ticker)
 	}
 
 	webDate := struct {
-		ROERecent string `selector:":nth-child(2)"`
+		ROEGuess string `selector:"p:nth-child(6) a"`
 	}{}
 
 	err := GetWebData(
-		"div.fdm div:nth-child(6)",
+		"#changyong",
 		url,
 		&webDate,
 	)
 	if err != nil {
-		return 0, fmt.Errorf("%s 获取\"滚动 ROE\"数据异常", s.Ticker)
+		return 0, fmt.Errorf("%s 获取\"加权 ROE\"数据异常", s.Ticker)
 	}
-	if webDate.ROERecent == "" {
-		return 0, fmt.Errorf("%s 获取\"滚动 ROE\"数据异常", s.Ticker)
+	if webDate.ROEGuess == "" {
+		return 0, fmt.Errorf("%s 获取\"加权 ROE\"数据异常", s.Ticker)
 	}
-	return strconv.ParseFloat(webDate.ROERecent[:len(webDate.ROERecent)-1], 64)
+	return strconv.ParseFloat(webDate.ROEGuess[:len(webDate.ROEGuess)-1], 64)
 }
 
 // A 股计算价值
@@ -136,15 +138,15 @@ func (s *Stock) CalcValueCH() error {
 	if err != nil {
 		return err
 	}
-	roeRecent, err := s.GetROERecent()
+	ROEGuess, err := s.GetROEGuess()
 	if err != nil {
 		return err
 	}
 
 	if roeavg == 0 {
-		s.ROE = roeRecent
+		s.ROE = ROEGuess
 	} else {
-		s.ROE = roeavg*0.7 + roeRecent*0.3
+		s.ROE = roeavg*0.7 + ROEGuess*0.3
 	}
 
 	s.Value = s.PE / s.ROE
@@ -311,6 +313,21 @@ func GetWebData(selectors, url string, v interface{}) error {
 		e.Unmarshal(v)
 	})
 	if err := c.Visit(url); err != nil {
+		return err
+	}
+	return nil
+}
+
+// 从网络 API 获取数据
+func GetWebAPI(url string, v interface{}) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&v)
+	if err != nil {
 		return err
 	}
 	return nil
