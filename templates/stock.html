@@ -75,12 +75,22 @@
             <td>
                 <a href="{{ $v.URL }}">{{ $v.Name }}</a>
             </td>
-            <td>{{ $v.Price }}</td>
+            <td>
+                <a href="{{ url $v.Ticker $v.CHUS `price` }}">{{ $v.Price }}</a>
+            </td>
             <td>{{ floatFormat $v.Value }}</td>
-            <td>{{ floatFormat $v.ROE }}</td>
-            <td>{{ floatFormat $v.PE }}</td>
-            <td>{{ floatFormat $v.PB }}</td>
-            <td>{{ $v.Dividend }}</td>
+            <td>
+                <a href="{{ url $v.Ticker $v.CHUS `roe` }}">{{ floatFormat $v.ROE }}</a>
+            </td>
+            <td>
+                <a href="{{ url $v.Ticker $v.CHUS `pe` }}">{{ floatFormat $v.PE }}</a>
+            </td>
+            <td>
+                <a href="{{ url $v.Ticker $v.CHUS `pb` }}">{{ floatFormat $v.PB }}</a>
+            </td>
+            <td>
+                <a href="{{ url $v.Ticker $v.CHUS `dividend` }}">{{ $v.Dividend }}</a>
+            </td>
             <td>
                 <form action="?ticker={{ $v.Ticker }}&option=alertmail" method="POST">
                     <button onclick="updateResult()">{{ alertMailFormat $v.AlertMail }}</button>

@@ -30,14 +30,7 @@ type Stock struct {
 
 // PE（TTM）、名字 腾讯证券
 func (s *Stock) GetPEName() (float64, error) {
-	url := "https://gu.qq.com"
-
-	switch s.Ticker[0:2] {
-	case "60":
-		url = fmt.Sprintf("%s/sh%s/gp", url, s.Ticker)
-	case "00":
-		url = fmt.Sprintf("%s/sz%s/gp", url, s.Ticker)
-	}
+	s.URL = fmt.Sprintf("https://gu.qq.com/%s/gp", SHSZ(s.Ticker))
 
 	webDate := struct {
 		Name  string `selector:"div.gb_title div.title_bg h1:nth-child(1)"`
@@ -48,7 +41,7 @@ func (s *Stock) GetPEName() (float64, error) {
 
 	err := GetWebData(
 		"#hqpanel",
-		url,
+		s.URL,
 		&webDate,
 	)
 
@@ -69,7 +62,7 @@ func (s *Stock) GetPEName() (float64, error) {
 
 // 五年平均 ROE 股息（集思录）
 func (s *Stock) GetROEAVG() (float64, error) {
-	s.URL = fmt.Sprintf("https://www.jisilu.cn/data/stock/%s", s.Ticker)
+	url := fmt.Sprintf("https://www.jisilu.cn/data/stock/%s", s.Ticker)
 
 	webDate := struct {
 		DividendAVG string `selector:"tr:nth-child(2) td:nth-child(2)" attr:"title"`
@@ -78,7 +71,7 @@ func (s *Stock) GetROEAVG() (float64, error) {
 
 	err := GetWebData(
 		"#stock_detail tbody",
-		s.URL,
+		url,
 		&webDate,
 	)
 
@@ -106,14 +99,7 @@ func (s *Stock) GetROEAVG() (float64, error) {
 
 // 预测 ROE（亿牛网）
 func (s *Stock) GetROEGuess() (float64, error) {
-	url := "https://eniu.com/gu"
-
-	switch s.Ticker[0:2] {
-	case "60":
-		url = fmt.Sprintf("%s/sh%s/roe", url, s.Ticker)
-	case "00":
-		url = fmt.Sprintf("%s/sz%s/roe", url, s.Ticker)
-	}
+	url := fmt.Sprintf("https://eniu.com/gu/%s/roe", SHSZ(s.Ticker))
 
 	webDate := struct {
 		ROEGuess string `selector:"p:nth-child(6) a"`
@@ -363,4 +349,47 @@ func GetWebAPI(url string, v interface{}) error {
 // ture A 股,false美股
 func CHUS(c byte) bool {
 	return strings.Contains("603", string(c))
+}
+
+// 上海 or 深圳 交易所
+func SHSZ(ticker string) string {
+	switch ticker[0:2] {
+	case "60":
+		return fmt.Sprintf("sh%s", ticker)
+	case "00":
+		return fmt.Sprintf("sz%s", ticker)
+	}
+	return ""
+}
+
+func URL(ticker, chus, sort string) string {
+	switch chus {
+	case "ch":
+		switch sort {
+		case "price":
+			return fmt.Sprintf("https://eniu.com/gu/%s/price", SHSZ(ticker))
+		case "roe":
+			return fmt.Sprintf("https://eniu.com/gu/%s/roe", SHSZ(ticker))
+		case "pe":
+			return fmt.Sprintf("https://eniu.com/gu/%s/pe_ttm", SHSZ(ticker))
+		case "pb":
+			return fmt.Sprintf("https://eniu.com/gu/%s/pb", SHSZ(ticker))
+		case "dividend":
+			return fmt.Sprintf("https://eniu.com/gu/%s/dv", SHSZ(ticker))
+		}
+	case "us":
+		switch sort {
+		case "price":
+			return fmt.Sprintf("https://www.financecharts.com/stocks/%s/summary/price", ticker)
+		case "roe":
+			return fmt.Sprintf("https://www.financecharts.com/stocks/%s/growth/roe", ticker)
+		case "pe":
+			return fmt.Sprintf("https://www.financecharts.com/stocks/%s/value/pe-ratio", ticker)
+		case "pb":
+			return fmt.Sprintf("https://www.financecharts.com/stocks/%s/value/price-to-book-value", ticker)
+		case "dividend":
+			return fmt.Sprintf("https://www.financecharts.com/stocks/%s/dividends/dividend-yield", ticker)
+		}
+	}
+	return ""
 }

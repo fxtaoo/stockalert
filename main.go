@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"stockalert/conf"
+	"stockalert/stock"
 	"strings"
 	"time"
 
@@ -94,6 +95,7 @@ func main() {
 		"floatIndex": func(i int) int {
 			return i + 1
 		},
+		"url": stock.URL,
 	})
 	r.LoadHTMLGlob("templates/*.html")
 
