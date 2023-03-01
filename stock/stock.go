@@ -20,6 +20,7 @@ type Stock struct {
 	ValueTime     time.Time `json:"-"`
 	ValueCSS      string    `json:"-"`
 	PE            float64   `json:"-"`
+	PB            float64   `json:"-"`
 	ROE           float64   `json:"-"`
 	Price         string    `json:"-"`
 	Dividend      string    `json:"-"`
@@ -42,6 +43,7 @@ func (s *Stock) GetPEName() (float64, error) {
 		Name  string `selector:"div.gb_title div.title_bg h1:nth-child(1)"`
 		Price string `selector:"#spFP div:nth-child(1) span:nth-child(1)"`
 		PE    string `selector:"div.content div.col-2 ul:nth-child(3) li:nth-child(4) span:nth-child(2)"`
+		PB    string `selector:"div.content div.col-2 ul:nth-child(3) li:nth-child(2) span:nth-child(2)"`
 	}{}
 
 	err := GetWebData(
@@ -51,13 +53,17 @@ func (s *Stock) GetPEName() (float64, error) {
 	)
 
 	if err != nil {
-		return 0, fmt.Errorf("%s 获取\"PE、名字、价格\"数据异常", s.Ticker)
+		return 0, fmt.Errorf("%s 获取\"PE、PB、名字、价格\"数据异常", s.Ticker)
 	}
-	if webDate.Name == "" || webDate.PE == "" {
-		return 0, fmt.Errorf("%s 获取\"PE、名字、价格\"数据异常", s.Ticker)
+	if webDate.Name == "" || webDate.PE == "" || webDate.PB == "" {
+		return 0, fmt.Errorf("%s 获取\"PE、PB、名字、价格\"数据异常", s.Ticker)
 	}
 	s.Name = webDate.Name
 	s.Price = webDate.Price
+	s.PB, err = strconv.ParseFloat(webDate.PB, 64)
+	if err != nil {
+		return 0, err
+	}
 	return strconv.ParseFloat(webDate.PE, 64)
 }
 
@@ -165,6 +171,7 @@ func (s *Stock) CalcValueUS() error {
 		Price       string `selector:"#quote-header-info div:nth-child(3) div:nth-child(1) div:nth-child(1) fin-streamer:nth-child(1)"`
 		TrailingPE  string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(3) td:nth-child(2)"`
 		ForwardPE   string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(4) td:nth-child(2)"`
+		PB          string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(7) td:nth-child(2)"`
 		ROE         string `selector:"#Col1-0-KeyStatistics-Proxy section div:nth-child(3) div:nth-child(3) div div:nth-child(3) div div table tbody tr:nth-child(2) td:nth-child(2)"`
 		TrailingPE1 string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(3) td:nth-child(3)"`
 		TrailingPE2 string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(3) td:nth-child(4)"`
@@ -176,6 +183,11 @@ func (s *Stock) CalcValueUS() error {
 		ForwardPE3  string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(4) td:nth-child(5)"`
 		ForwardPE4  string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(4) td:nth-child(6)"`
 		ForwardPE5  string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(4) td:nth-child(7)"`
+		PB1         string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(7) td:nth-child(3)"`
+		PB2         string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(7) td:nth-child(4)"`
+		PB3         string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(7) td:nth-child(5)"`
+		PB4         string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(7) td:nth-child(6)"`
+		PB5         string `selector:"#Col1-0-KeyStatistics-Proxy thead+tbody tr:nth-child(7) td:nth-child(7)"`
 		Dividend    string `selector:"#Col1-0-KeyStatistics-Proxy section div:nth-child(3) div:nth-child(2) div div:nth-child(3) div div table tbody tr:nth-child(5) td:nth-child(2)"`
 	}{}
 
@@ -188,7 +200,7 @@ func (s *Stock) CalcValueUS() error {
 	}
 
 	// 计算股息
-	calcPE := func(currentPE, pe1, pe2, pe3, pe4, pe5 string) (float64, error) {
+	calc := func(current, v1, v2, v3, v4, v5 string) (float64, error) {
 		parseFloat := func(pe string, nonZeroNum *int) (float64, error) {
 			if pe == "N/A" || pe == "" {
 				return 0, nil
@@ -197,41 +209,41 @@ func (s *Stock) CalcValueUS() error {
 				return strconv.ParseFloat(pe, 64)
 			}
 		}
-		if currentPE == "N/A" {
+		if current == "N/A" {
 			// 有几个非零值
 			nonZeroNum := new(int)
-			pe1v, err := parseFloat(pe1, nonZeroNum)
+			tmp1, err := parseFloat(v1, nonZeroNum)
 			if err != nil {
 				return 0, err
 			}
-			pe2v, err := parseFloat(pe2, nonZeroNum)
+			tmp2, err := parseFloat(v2, nonZeroNum)
 			if err != nil {
 				return 0, err
 			}
-			pe3v, err := parseFloat(pe3, nonZeroNum)
+			tmp3, err := parseFloat(v3, nonZeroNum)
 			if err != nil {
 				return 0, err
 			}
-			pe4v, err := parseFloat(pe4, nonZeroNum)
+			tmp4, err := parseFloat(v4, nonZeroNum)
 			if err != nil {
 				return 0, err
 			}
-			pe5v, err := parseFloat(pe5, nonZeroNum)
+			tmp5, err := parseFloat(v5, nonZeroNum)
 			if err != nil {
 				return 0, err
 			}
 			if *nonZeroNum == 0 {
 				return 0, nil
 			} else {
-				return (pe1v + pe2v + pe3v + pe4v + pe5v) / float64(*nonZeroNum), nil
+				return (tmp1 + tmp2 + tmp3 + tmp4 + tmp5) / float64(*nonZeroNum), nil
 			}
 
 		} else {
-			return strconv.ParseFloat(currentPE, 64)
+			return strconv.ParseFloat(current, 64)
 		}
 	}
 
-	trailingPE, err := calcPE(
+	trailingPE, err := calc(
 		webDate.TrailingPE,
 		webDate.TrailingPE1,
 		webDate.TrailingPE2,
@@ -243,7 +255,7 @@ func (s *Stock) CalcValueUS() error {
 		return err
 	}
 
-	forwardPE, err := calcPE(
+	forwardPE, err := calc(
 		webDate.ForwardPE,
 		webDate.ForwardPE1,
 		webDate.ForwardPE2,
@@ -254,6 +266,19 @@ func (s *Stock) CalcValueUS() error {
 	if err != nil {
 		return err
 	}
+
+	s.PB, err = calc(
+		webDate.PB,
+		webDate.PB1,
+		webDate.PB2,
+		webDate.PB3,
+		webDate.PB4,
+		webDate.PB5,
+	)
+	if err != nil {
+		return err
+	}
+
 	s.Name = strings.TrimSpace(strings.Split(webDate.Name, "(")[0])
 	s.PE = trailingPE*0.7 + forwardPE*0.3
 	if webDate.ROE != "N/A" {
@@ -269,7 +294,9 @@ func (s *Stock) CalcValueUS() error {
 	}
 
 	s.Price = webDate.Price
-	if s.Dividend != "N/A" {
+	if webDate.Dividend == "N/A" {
+		s.Dividend = webDate.Dividend
+	} else {
 		s.Dividend = fmt.Sprintf("%s%%", webDate.Dividend)
 	}
 	return nil

@@ -63,6 +63,7 @@
             <td>价值</td>
             <td>ROE</td>
             <td>PE</td>
+            <td>PB</td>
             <td>股息</td>
             <td>邮件提醒</td>
             <td>删除</td>
@@ -78,6 +79,7 @@
             <td>{{ floatFormat $v.Value }}</td>
             <td>{{ floatFormat $v.ROE }}</td>
             <td>{{ floatFormat $v.PE }}</td>
+            <td>{{ floatFormat $v.PB }}</td>
             <td>{{ $v.Dividend }}</td>
             <td>
                 <form action="?ticker={{ $v.Ticker }}&option=alertmail" method="POST">
